@@ -1,62 +1,50 @@
-using BuberDinner.Application.Common.Interfaces.Authentication;
+ï»¿using BuberDinner.Application.Common.Interfaces.Authentication;
 using BuberDinner.Application.Common.Interfaces.Services;
-using BuberDinner.Domain.Entities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace BuberDinner.Infrastructure.Authentication;
-
-public class JwtTokenGenerator : IJwtTokenGenerator
+namespace BuberDinner.Infrastructure.Authentication
 {
-    private readonly JwtSettings _jwtSettings;
-    private readonly IDateTimeProvider _dateTimeProvider;
-
-    public JwtTokenGenerator(IDateTimeProvider dateTimeProvider, IOptions<JwtSettings> jwtOptions)
+    public class JwtTokenGenerator : IJwtTokenGenerator
     {
-        _dateTimeProvider = dateTimeProvider;
-        // IOption<T> ¬° .NET Core ¤º«Øªº²ÕºA³]©wª`¤J¤è¦¡¡A¥i±q¦h­Ó²ÕºA´£¨ÑªÌ(ConfigurationProvider) ¤¤¥H±j«¬§Oªº¤è¦¡Ã´µ²²ÕºA¡C
-        _jwtSettings = jwtOptions.Value;
-    }
+        private readonly JwtSettings _jwtSettings;
+        private readonly IDateTimeProvider _dateTimeProvider;
 
-    public string GenerateToken(User user)
-    {
-        // Ä~Äò¨Ï¥Î signingKey ³Ğ«Ø SigningCredentials ©M JWT ¥OµP
-        var siginingCredentials = new SigningCredentials(
-            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret)), // ¨Ï¥Î·s¥Í¦¨ªº256¦ìª÷Æ_
-            SecurityAlgorithms.HmacSha256
-        );
-
-        // ³Ğ«Ø¤@²ÕÁn©ú¡]claims¡^¡A³o¨ÇÁn©ú±N¥]§t¦bJWT¥OµP¤¤
-        var claims = new[]
+        public JwtTokenGenerator(IDateTimeProvider dateTimeProvider,
+                                 IOptions<JwtSettings> jwtOptions)
         {
-        // ²K¥[¥Î¤áªº°ß¤@¼ĞÃÑ²Å§@¬°¤l¡]Subject¡^Án©ú
-        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-        // ²K¥[¥Î¤áªº¦W¦r§@¬°µ¹¤©¦WºÙ¡]GivenName¡^Án©ú
-        new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName),
-        // ²K¥[¥Î¤áªº©m¤ó§@¬°©m¤ó¡]FamilyName¡^Án©ú
-        new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName),
-        // ²K¥[¤@­Ó°ß¤@ÃÑ§O²Å¡]JTI¡^Án©ú¡A³q±`¥Î©ó¨¾¤î­«©ñ§ğÀ»
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-    };
+            _dateTimeProvider = dateTimeProvider;
+            _jwtSettings = jwtOptions.Value;
+        }
 
-        // ³Ğ«Ø¤@­ÓJWT¦w¥ş¥OµP¡]JwtSecurityToken¡^
-        var securityToken = new JwtSecurityToken(
-            // «ü©wJWTªºµo¦æªÌ¡]issuer¡^
-            issuer: _jwtSettings.Issuer,
-            // audience ¥Î©ó«ü©w JWT ¥OµPªº¡u±µ¦¬¤è¡v³q±`¡Aaudience ¥i¥H¬OÀ³¥Îµ{¦¡ªº¦WºÙ¡BÃÑ§O²Å©Î¬Y¨Ç¨ãÅéªº­È
-            audience: _jwtSettings.Audience,
-            // ³]¸m¥OµPªº¹L´Á®É¶¡¬°·í«e®É¶¡ªº XX ¤ÀÄÁ«á
-            expires: _dateTimeProvider.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
-            // ±NÁn©ú¡]claims¡^²K¥[¨ì¥OµP¤¤
-            claims: claims,
-            // «ü©w¥Î©óÃ±¸p¥OµPªºÃ±¸pª÷Æ_¡]SigningCredentials¡^
-            signingCredentials: siginingCredentials
-        );
+        public string GenerateToken(Guid userId, string firstName, string lastName)
+        {
+            // è¨­å®šç°½ç«  - ç¢ºä¿æ­¤ Token ç”±ä¿¡ä»»çš„ä¾†æºç°½ç™¼
+            var signingCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret)),
+                SecurityAlgorithms.HmacSha256);
 
-        // ¨Ï¥ÎJWT¦w¥ş¥OµP³B²zµ{§Ç¡]JwtSecurityTokenHandler¡^±N¥OµPÂà´«¬°¦r²Å¦ê
-        return new JwtSecurityTokenHandler().WriteToken(securityToken);
+            // å»ºç«‹ JWT çš„è²æ˜
+            var claims = new[] { 
+                new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new Claim(JwtRegisteredClaimNames.GivenName, firstName),
+                new Claim(JwtRegisteredClaimNames.FamilyName, lastName),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            };
+
+            // å»ºç«‹ JWT
+            var securityToken = new JwtSecurityToken(
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
+                expires: _dateTimeProvider.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
+                claims: claims,
+                signingCredentials: signingCredentials);
+
+            // å°‡ JWT è½‰æ›ç‚ºå­—ä¸²ä¸¦ return
+            return new JwtSecurityTokenHandler().WriteToken(securityToken);
+        }
     }
 }

@@ -1,62 +1,55 @@
-using BuberDinner.Application.Authentication.Commands.Register;
-using BuberDinner.Application.Authentication.Common;
-using BuberDinner.Application.Authentication.Queries.Login;
 using BuberDinner.Contracts.Authentication;
-using ErrorOr;
-using MapsterMapper;
-using MediatR;
-using Microsoft.AspNetCore.Authorization;
+using BuberDinner.Application.Services.Authentication;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BuberDinner.Api.Controllers;
 
+[ApiController]
 [Route("Auth")]
-// AllowAnonymous Attribute 可以允許任何 Request 進來此 Controller 不受 Authorization 的驗證影響
-[AllowAnonymous]
-public class AuthenticationController : ApiController
+public class AuthenticationController : Controller
 {
-    private readonly ISender _mediator;
-    private readonly IMapper _mapper;
+    private readonly IAuthenticationService _authenticationService;
 
-    public AuthenticationController(IMediator mediator, IMapper mapper)
+    public AuthenticationController(IAuthenticationService authenticationService)
     {
-        _mediator = mediator;
-        _mapper = mapper;
+        _authenticationService = authenticationService;
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterRequest request)
+    public IActionResult Register(RegisterRequest request)
     {
-        var command = _mapper.Map<RegisterCommand>(request);
+        var authResult = _authenticationService.Register(
+            request.FirstName,
+            request.LastName,
+            request.Email,
+            request.Password);
 
-        // 改用 Result<AuthenticationResult> 型別去接資料
-        ErrorOr<AuthenticationResult> authResult = await _mediator.Send(command);
-
-        // 透過 Match 判斷是要回傳 AuthenticationResult Or List<Error>
-        return authResult.Match(
-            authResult => Ok(_mapper.Map<AuthenticationResponse>(authResult)),
-            errors => Problem(errors)
+        var response = new AuthenticationResponse(
+            authResult.Id,
+            authResult.FirstName,
+            authResult.LastName,
+            authResult.Email,
+            authResult.Token
             );
+
+        return Ok(response);
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginRequest request)
+    public IActionResult Login(LoginRequest request)
     {
-        var query = _mapper.Map<LoginQuery>(request);
+        var authResult = _authenticationService.Login(
+            request.Email,
+            request.Password);
 
-        ErrorOr<AuthenticationResult> authResult = await _mediator.Send(query);
-
-        //if (authResult.IsError && authResult.FirstError == BuberDinner.Domain.Common.Errors.Errors.Authentication.InvalidCredentials)
-        //{
-        //    return Problem(
-        //        statusCode: StatusCodes.Status401Unauthorized,
-        //        title: authResult.FirstError.Description);
-        //}
-
-        // 透過 Match 判斷是要回傳 AuthenticationResult Or List<Error>
-        return authResult.Match(
-            authResult => Ok(_mapper.Map<AuthenticationResponse>(authResult)),
-            errors => Problem(errors)
+        var response = new AuthenticationResponse(
+            authResult.Id,
+            authResult.FirstName,
+            authResult.LastName,
+            authResult.Email,
+            authResult.Token
             );
+
+        return Ok(response);
     }
 }
