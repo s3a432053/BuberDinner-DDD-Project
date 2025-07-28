@@ -9,12 +9,14 @@ namespace BuberDinner.Api.Filters
         {
             var exception = context.Exception;
 
-            var errorResult = new { error = "An error ocurred while processing your request." };
-
-            context.Result = new ObjectResult(errorResult)
+            var problemDetails = new ProblemDetails()
             {
-                StatusCode = StatusCodes.Status500InternalServerError
+                Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                Title = "An error occurred while processing your request.",
+                Status = StatusCodes.Status500InternalServerError,
             };
+
+            context.Result = new ObjectResult(problemDetails);
 
             context.ExceptionHandled = true;
         }
