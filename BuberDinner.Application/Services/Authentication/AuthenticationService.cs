@@ -1,4 +1,5 @@
-﻿using BuberDinner.Application.Common.Interfaces.Authentication;
+﻿using BuberDinner.Application.Common.Errors;
+using BuberDinner.Application.Common.Interfaces.Authentication;
 using BuberDinner.Application.Common.Interfaces.Persistence;
 using BuberDinner.Domain.Entities;
 
@@ -45,7 +46,7 @@ namespace BuberDinner.Application.Services.Authentication
             // 檢查 User 是否已存在
             if (_userRepository.GetUserByEmail(email) is not null)
             {
-                throw new Exception("User with given email already exists.");
+                throw new DuplicateEmailException();
             }
 
             // 建立 User (產生 Unique ID)
