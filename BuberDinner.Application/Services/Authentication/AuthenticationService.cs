@@ -2,7 +2,7 @@
 using BuberDinner.Application.Common.Interfaces.Authentication;
 using BuberDinner.Application.Common.Interfaces.Persistence;
 using BuberDinner.Domain.Entities;
-using OneOf;
+using FluentResults;
 
 namespace BuberDinner.Application.Services.Authentication
 {
@@ -42,12 +42,12 @@ namespace BuberDinner.Application.Services.Authentication
             );
         }
 
-        public OneOf<AuthenticationResult, IError> Register(string firstName, string lastName, string email, string password)
+        public Result<AuthenticationResult> Register(string firstName, string lastName, string email, string password)
         {
             // 檢查 User 是否已存在
             if (_userRepository.GetUserByEmail(email) is not null)
             {
-                return new DuplicateEmailError();
+                return Result.Fail<AuthenticationResult>(new[] { new DuplicateEmailError() });
             }
 
             // 建立 User (產生 Unique ID)
