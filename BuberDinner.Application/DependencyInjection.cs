@@ -1,6 +1,8 @@
-using BuberDinner.Application.Services.Authentication.Commands;
-using BuberDinner.Application.Services.Authentication.Queries;
+using BuberDinner.Application.Common.Behaviors;
+using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace BuberDinner.Application
 {
@@ -8,9 +10,11 @@ namespace BuberDinner.Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            services.AddScoped<IAuthenticationCommandService, AuthenticationCommandService>();
-            services.AddScoped<IAuthenticationQueryService, AuthenticationQueryService>();
+            services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(DependencyInjection)));
+            
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
+            services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             return services;
         }
     }
