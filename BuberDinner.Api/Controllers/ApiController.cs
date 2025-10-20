@@ -22,9 +22,7 @@ namespace BuberDinner.Api.Controllers
 
             HttpContext.Items[HttpContextItemKeys.Errors] = errors;
 
-            var firstError = errors.FirstOrDefault();
-
-            return Problem(firstError);
+            return Problem(errors.FirstOrDefault());
         }
 
         private IActionResult Problem(Error firstError)
