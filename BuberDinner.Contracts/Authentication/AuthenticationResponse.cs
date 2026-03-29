@@ -1,8 +1,8 @@
 namespace BuberDinner.Contracts.Authentication;
 
-// ÅçÃÒ¬ÛÃö API ªº¦^¶Ç¸ê®Æ®æ¦¡
+// ï¿½ï¿½ï¿½Ò¬ï¿½ï¿½ï¿½ API ï¿½ï¿½ï¿½^ï¿½Ç¸ï¿½Æ®æ¦¡
 public record AuthenticationResponse(
-    Guid Id,
+    string Id,
     string FirstName,
     string LastName,
     string Email,
